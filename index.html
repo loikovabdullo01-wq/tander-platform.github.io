@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Taj Tandir - Панель управления</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Display:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <!-- SheetJS для экспорта в Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --dark-brown: #503214;
+            --mid-brown: #9b5a1c;
+            --beige: #c3aaa0;
+            --yellow: #ffcb00;
+            --white: #ffffff;
+            --bg-color: #fcf9f5;
+            --shadow-sm: 0 4px 6px rgba(80, 50, 20, 0.05);
+            --shadow-md: 0 8px 15px rgba(80, 50, 20, 0.1);
+            --shadow-lg: 0 15px 30px rgba(80, 50, 20, 0.15);
+            --radius: 16px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Noto Sans Display', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--dark-brown);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* --- Скрытие/Показ экранов --- */
+        .screen {
+            display: none;
+            width: 100%;
+            min-height: 100vh;
+            animation: fadeIn 0.4s ease;
+        }
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Логотип --- */
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px 0;
+        }
+        .logo-svg {
+            width: 180px;
+            height: auto;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+        }
+
+        /* --- Экран входа --- */
+        #login-screen {
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--bg-color) 0%, #f0e6db 100%);
+        }
+        .login-card {
+            background: var(--white);
+            border-radius: 24px;
+            padding: 40px 30px;
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+        .login-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            color: var(--dark-brown);
+        }
+        .role-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .role-btn {
+            background: #f8f1eb;
+            border: 2px solid transparent;
+            border-radius: var(--radius);
+            padding: 20px 10px;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--dark-brown);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .role-btn:hover, .role-btn.selected {
+            background: var(--yellow);
+            border-color: var(--dark-brown);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        .role-btn svg {
+            width: 32px;
+            height: 32px;
+            fill: var(--dark-brown);
+        }
+
+        .password-group {
+            display: none;
+            margin-bottom: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+        .password-group.active {
+            display: block;
+        }
+        .form-input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid var(--beige);
+            border-radius: var(--radius);
+            font-size: 16px;
+            outline: none;
+            transition: var(--transition);
+            background: var(--bg-color);
+            color: var(--dark-brown);
+        }
+        .form-input:focus {
+            border-color: var(--mid-brown);
+            box-shadow: 0 0 0 3px rgba(155, 90, 28, 0.1);
+        }
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-primary {
+            background: var(--dark-brown);
+            color: var(--white);
+        }
+        .btn-primary:hover {
+            background: var(--mid-brown);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        .btn-secondary {
+            background: var(--beige);
+            color: var(--dark-brown);
+        }
+        .btn-secondary:hover {
+            background: #b09488;
+        }
+        .btn-danger {
+            background: #e74c3c;
+            color: var(--white);
+        }
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        .btn-excel {
+            background: #217346;
+            color: var(--white);
+        }
+        .btn-excel:hover {
+            background: #1e6b3f;
+        }
+
+        /* --- Шапка (Навигация) --- */
+        .top-nav {
+            background: var(--dark-brown);
+            color: var(--white);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-md);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .top-nav .logo-svg {
+            width: 80px;
+        }
+        .nav-title {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .nav-btn {
+            background: transparent;
+            border: 1px solid var(--white);
+            color: var(--white);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: var(--transition);
+        }
+        .nav-btn:hover {
+            background: var(--white);
+            color: var(--dark-brown);
+        }
+
+        /* --- Кабинет сотрудника --- */
+        .dashboard-content {
+            padding: 20px;
+            flex: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .report-header {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .report-title h2 {
+            font-size: 22px;
+            margin-bottom: 5px;
+            color: var(--mid-brown);
+        }
+        .report-meta {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .meta-field {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .meta-field label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--mid-brown);
+        }
+        .meta-input {
+            padding: 8px 12px;
+            border: 2px solid var(--beige);
+            border-radius: 8px;
+            font-size: 14px;
+            background: var(--bg-color);
+            color: var(--dark-brown);
+        }
+
+        /* --- Таблицы --- */
+        .table-container {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            overflow-x: auto;
+            margin-bottom: 20px;
+            -webkit-overflow-scrolling: touch;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+        th {
+            background: #f4ece6;
+            color: var(--dark-brown);
+            font-weight: 700;
+            padding: 15px 10px;
+            text-align: left;
+            border-bottom: 2px solid var(--beige);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: middle;
+        }
+        tr:hover td {
+            background-color: #faf8f6;
+        }
+        .input-qty {
+            width: 80px;
+            padding: 8px;
+            border: 2px solid var(--beige);
+            border-radius: 8px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--dark-brown);
+            background: var(--bg-color);
+            transition: var(--transition);
+        }
+        .input-qty:focus {
+            border-color: var(--mid-brown);
+            outline: none;
+            background: var(--white);
+        }
+        .price-cell {
+            font-weight: 700;
+            color: var(--mid-brown);
+        }
+        .sum-cell {
+            font-weight: 700;
+            color: var(--dark-brown);
+        }
+        
+        .total-row td {
+            background: #fdfaf7;
+            font-weight: 900;
+            font-size: 18px;
+            color: var(--dark-brown);
+            border-top: 2px solid var(--beige);
+            border-bottom: none;
+        }
+
+        /* --- Касса дополнительные поля --- */
+        .cashier-extra-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 20px;
+        }
+        .cashier-field {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .cashier-field label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--mid-brown);
+        }
+        .cashier-field input {
+            padding: 10px;
+            border: 2px solid var(--beige);
+            border-radius: 8px;
+            font-size: 15px;
+            background: var(--bg-color);
+            color: var(--dark-brown);
+        }
+
+        /* --- Кнопки действий --- */
+        .action-bar {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            padding: 20px 0;
+        }
+        .action-bar .btn {
+            width: auto;
+            padding: 12px 24px;
+        }
+
+        /* --- Кабинет директора --- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            border-left: 5px solid var(--yellow);
+        }
+        .stat-card h3 {
+            font-size: 14px;
+            color: var(--mid-brown);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: 900;
+            color: var(--dark-brown);
+        }
+
+        .director-controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .date-picker-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .tabs {
+            display: flex;
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 5px;
+            box-shadow: var(--shadow-sm);
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            background: transparent;
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--mid-brown);
+            cursor: pointer;
+            border-radius: 12px;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+        .tab-btn.active {
+            background: var(--dark-brown);
+            color: var(--white);
+            box-shadow: var(--shadow-sm);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* --- Тосты --- */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            background: var(--dark-brown);
+            color: var(--white);
+            padding: 15px 25px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease, fadeOut 0.3s ease 3s forwards;
+            border-left: 4px solid var(--yellow);
+        }
+        .toast.success { border-left-color: #2ecc71; }
+        .toast.error { border-left-color: #e74c3c; }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        /* --- Модальное окно --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(80, 50, 20, 0.5);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-box {
+            background: var(--white);
+            border-radius: 24px;
+            padding: 30px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+            animation: zoomIn 0.3s ease;
+        }
+        @keyframes zoomIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .modal-box h3 {
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        .modal-box p {
+            margin-bottom: 25px;
+            color: var(--mid-brown);
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .modal-actions .btn {
+            width: auto;
+            padding: 10px 20px;
+        }
+
+        /* --- Мобильная адаптация --- */
+        @media (max-width: 768px) {
+            .report-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .report-meta {
+                width: 100%;
+                flex-direction: column;
+            }
+            .meta-field {
+                width: 100%;
+            }
+            .meta-input {
+                width: 100%;
+            }
+            .action-bar {
+                justify-content: stretch;
+                flex-direction: column;
+            }
+            .action-bar .btn {
+                width: 100%;
+            }
+            .director-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .tabs {
+                flex-direction: column;
+            }
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            .print-area, .print-area * { visibility: visible; }
+            .print-area { position: absolute; left: 0; top: 0; width: 100%; }
+            .top-nav, .action-bar, .tabs, .director-controls, .stats-grid { display: none !important; }
+            .table-container { box-shadow: none; overflow: visible; }
+            table { min-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Контейнер для уведомлений -->
+    <div id="toast-container"></div>
+
+    <!-- Модальное окно подтверждения -->
+    <div id="modal-confirm" class="modal-overlay">
+        <div class="modal-box">
+            <h3>Вы уверены?</h3>
+            <p>Все несохранённые данные будут потеряны.</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+                <button class="btn btn-danger" id="modal-confirm-btn">Очистить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= ЭКРАН ВХОДА ================= -->
+    <div id="login-screen" class="screen active">
+        <div class="login-card">
+            <div class="logo-container">
+                <!-- SVG Логотип Taj Tandir -->
+                <svg class="logo-svg" viewBox="0 0 300 250" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Фон -->
+                    <circle cx="150" cy="130" r="110" fill="#9b5a1c" />
+                    <!-- Колосья -->
+                    <path d="M50 130 Q40 80 60 40 Q65 50 70 60 Q85 40 95 30 Q90 60 80 80 Q100 70 110 60 Q100 90 85 105 Q110 100 120 90 Q105 120 85 130 Z" fill="#ffcb00" />
+                    <path d="M250 130 Q260 80 240 40 Q235 50 230 60 Q215 40 205 30 Q210 60 220 80 Q200 70 190 60 Q200 90 215 105 Q190 100 180 90 Q195 120 215 130 Z" fill="#ffcb00" />
+                    <!-- Тандыр -->
+                    <path d="M100 160 L100 100 Q150 40 200 100 L200 160 Z" fill="#ffffff" />
+                    <path d="M120 160 L120 110 Q150 70 180 110 L180 160 Z" fill="#503214" />
+                    <!-- Огонь -->
+                    <path d="M150 140 Q140 120 150 100 Q160 120 150 140 Z" fill="#ffcb00" />
+                    <path d="M150 145 Q145 135 150 125 Q155 135 150 145 Z" fill="#ffffff" />
+                    <!-- Основание -->
+                    <rect x="90" y="160" width="120" height="10" rx="5" fill="#c3aaa0" />
+                    <!-- Текст -->
+                    <text x="150" y="215" font-family="'Noto Sans Display', sans-serif" font-weight="900" font-size="24" fill="#503214" text-anchor="middle" letter-spacing="2">Taj Tandir</text>
+                </svg>
+            </div>
+            <h1 class="login-title">Выберите кабинет</h1>
+            <div class="role-grid">
+                <button class="role-btn" data-role="vypechka">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                    Выпечка
+                </button>
+                <button class="role-btn" data-role="lepeshka">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                    Лепёшки
+                </button>
+                <button class="role-btn" data-role="kassa">
+                    <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+                    Касса
+                </button>
+                <button class="role-btn" data-role="director">
+                    <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    Директор
+                </button>
+            </div>
+            
+            <div class="password-group" id="password-group">
+                <input type="password" id="access-code" class="form-input" placeholder="Введите код доступа" autocomplete="off">
+                <div id="login-error" style="color: #e74c3c; font-size: 14px; margin-top: 10px; display: none;">Неверный код доступа</div>
+            </div>
+            <button class="btn btn-primary" id="login-btn" style="display: none;">Войти</button>
+        </div>
+    </div>
+
+    <!-- ================= ЭКРАН СОТРУДНИКА ================= -->
+    <div id="employee-screen" class="screen">
+        <div class="top-nav">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <svg class="logo-svg" viewBox="0 0 300 250" xmlns="http://www.w3.org/2000/svg" style="width: 60px;">
+                    <circle cx="150" cy="130" r="110" fill="#9b5a1c" />
+                    <path d="M50 130 Q40 80 60 40 Q65 50 70 60 Q85 40 95 30 Q90 60 80 80 Q100 70 110 60 Q100 90 85 105 Q110 100 120 90 Q105 120 85 130 Z" fill="#ffcb00" />
+                    <path d="M250 130 Q260 80 240 40 Q235 50 230 60 Q215 40 205 30 Q210 60 220 80 Q200 70 190 60 Q200 90 215 105 Q190 100 180 90 Q195 120 215 130 Z" fill="#ffcb00" />
+                    <path d="M100 160 L100 100 Q150 40 200 100 L200 160 Z" fill="#ffffff" />
+                    <path d="M120 160 L120 110 Q150 70 180 110 L180 160 Z" fill="#503214" />
+                    <path d="M150 140 Q140 120 150 100 Q160 120 150 140 Z" fill="#ffcb00" />
+                    <path d="M150 145 Q145 135 150 125 Q155 135 150 145 Z" fill="#ffffff" />
+                    <rect x="90" y="160" width="120" height="10" rx="5" fill="#c3aaa0" />
+                    <text x="150" y="215" font-family="'Noto Sans Display', sans-serif" font-weight="900" font-size="24" fill="#503214" text-anchor="middle" letter-spacing="2">Taj Tandir</text>
+                </svg>
+                <span class="nav-title" id="emp-nav-title">Отчёт</span>
+            </div>
+            <button class="nav-btn" onclick="logout()">Выйти</button>
+        </div>
+
+        <div class="dashboard-content">
+            <div class="report-header">
+                <div class="report-title">
+                    <h2 id="emp-report-name">Название отчёта</h2>
+                </div>
+                <div class="report-meta">
+                    <div class="meta-field">
+                        <label>Дата</label>
+                        <input type="date" id="emp-date" class="meta-input" style="color: var(--dark-brown);">
+                    </div>
+                    <div class="meta-field">
+                        <label>Время прибытия</label>
+                        <input type="time" id="emp-time" class="meta-input" style="color: var(--dark-brown);">
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="emp-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">№</th>
+                            <th>Товар</th>
+                            <th style="width: 100px;">Кол-во</th>
+                            <th style="width: 100px;">Цена</th>
+                            <th style="width: 120px;">Сумма</th>
+                        </tr>
+                    </thead>
+                    <tbody id="emp-tbody">
+                        <!-- Заполняется через JS -->
+                    </tbody>
+                    <tfoot>
+                        <tr class="total-row">
+                            <td colspan="4" style="text-align: right; padding-right: 20px;">ИТОГО:</td>
+                            <td id="emp-total">0</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div id="cashier-extra-fields" class="cashier-extra-grid" style="display: none;">
+                <!-- Заполняется через JS -->
+            </div>
+
+            <div class="action-bar">
+                <button class="btn btn-secondary" id="emp-clear-btn">Очистить</button>
+                <button class="btn btn-primary" id="emp-save-btn">Сохранить отчёт</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= ЭКРАН ДИРЕКТОРА ================= -->
+    <div id="director-screen" class="screen">
+        <div class="top-nav">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <svg class="logo-svg" viewBox="0 0 300 250" xmlns="http://www.w3.org/2000/svg" style="width: 60px;">
+                    <circle cx="150" cy="130" r="110" fill="#9b5a1c" />
+                    <path d="M50 130 Q40 80 60 40 Q65 50 70 60 Q85 40 95 30 Q90 60 80 80 Q100 70 110 60 Q100 90 85 105 Q110 100 120 90 Q105 120 85 130 Z" fill="#ffcb00" />
+                    <path d="M250 130 Q260 80 240 40 Q235 50 230 60 Q215 40 205 30 Q210 60 220 80 Q200 70 190 60 Q200 90 215 105 Q190 100 180 90 Q195 120 215 130 Z" fill="#ffcb00" />
+                    <path d="M100 160 L100 100 Q150 40 200 100 L200 160 Z" fill="#ffffff" />
+                    <path d="M120 160 L120 110 Q150 70 180 110 L180 160 Z" fill="#503214" />
+                    <path d="M150 140 Q140 120 150 100 Q160 120 150 140 Z" fill="#ffcb00" />
+                    <path d="M150 145 Q145 135 150 125 Q155 135 150 145 Z" fill="#ffffff" />
+                    <rect x="90" y="160" width="120" height="10" rx="5" fill="#c3aaa0" />
+                    <text x="150" y="215" font-family="'Noto Sans Display', sans-serif" font-weight="900" font-size="24" fill="#503214" text-anchor="middle" letter-spacing="2">Taj Tandir</text>
+                </svg>
+                <span class="nav-title">Кабинет директора</span>
+            </div>
+            <button class="nav-btn" onclick="logout()">Выйти</button>
+        </div>
+
+        <div class="dashboard-content print-area">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Общая выручка</h3>
+                    <div class="value" id="stat-revenue">0 ₽</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Отправлено отчётов</h3>
+                    <div class="value" id="stat-reports">0 / 3</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Дата</h3>
+                    <div class="value" id="stat-date" style="font-size: 20px;">--</div>
+                </div>
+            </div>
+
+            <div class="director-controls">
+                <div class="date-picker-group">
+                    <label style="font-weight: 700;">Выбрать дату:</label>
+                    <input type="date" id="dir-date" class="meta-input">
+                </div>
+                <div class="action-bar" style="padding: 0; margin: 0;">
+                    <button class="btn btn-excel" onclick="exportExcel()">📥 Скачать Excel</button>
+                    <button class="btn btn-secondary" onclick="window.print()">🖨 Печать / PDF</button>
+                </div>
+            </div>
+
+            <div class="tabs" id="dir-tabs">
+                <button class="tab-btn active" data-tab="vypechka">Выпечка</button>
+                <button class="tab-btn" data-tab="lepeshka">Лепёшки</button>
+                <button class="tab-btn" data-tab="kassa">Касса</button>
+            </div>
+
+            <!-- Таблица Выпечки -->
+            <div id="tab-vypechka" class="tab-content active">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th>№</th><th>Товар</th><th>Кол-во</th><th>Цена</th><th>Сумма</th></tr>
+                        </thead>
+                        <tbody id="dir-tbody-vypechka"></tbody>
+                        <tfoot><tr class="total-row"><td colspan="4" style="text-align: right; padding-right: 20px;">ИТОГО:</td><td id="dir-total-vypechka">0</td></tr></tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Таблица Лепёшки -->
+            <div id="tab-lepeshka" class="tab-content">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th>№</th><th>Товар</th><th>Кол-во</th><th>Цена</th><th>Сумма</th></tr>
+                        </thead>
+                        <tbody id="dir-tbody-lepeshka"></tbody>
+                        <tfoot><tr class="total-row"><td colspan="4" style="text-align: right; padding-right: 20px;">ИТОГО:</td><td id="dir-total-lepeshka">0</td></tr></tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Таблица Касса -->
+            <div id="tab-kassa" class="tab-content">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th>№</th><th>Товар</th><th>Кол-во</th><th>Цена</th><th>Сумма</th></tr>
+                        </thead>
+                        <tbody id="dir-tbody-kassa"></tbody>
+                        <tfoot><tr class="total-row"><td colspan="4" style="text-align: right; padding-right: 20px;">ИТОГО:</td><td id="dir-total-kassa">0</td></tr></tfoot>
+                    </table>
+                </div>
+                <div id="dir-cashier-extra" style="margin-top: 15px; padding: 15px; background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow-sm); display: none;">
+                    <!-- Доп. поля кассы для директора -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ================= ДАННЫЕ ТОВАРОВ =================
+        const BAKING_ITEMS = [
+            { id: 1, name: "ШЕРБЕТ кг", price: 750 },
+            { id: 2, name: "ПАХЛАВА кг.", price: 900 },
+            { id: 3, name: "ПАХЛАВА НАША кг.", price: 900 },
+            { id: 4, name: "Беляши с говядиной", price: 90 },
+            { id: 5, name: "Беляши с курицей", price: 80 },
+            { id: 6, name: "Беляши Татарские", price: 75 },
+            { id: 7, name: "Булочки с разной начинкой", price: 65 },
+            { id: 8, name: "ДОНЁР Курица", price: 210 },
+            { id: 9, name: "Лаззат с говядиной (ФАРШ)", price: 200 },
+            { id: 10, name: "Лаззат с курицей", price: 200 },
+            { id: 11, name: "Пирог с курицей", price: 120 },
+            { id: 12, name: "Пирожки с картошкой", price: 65 },
+            { id: 13, name: "Пицца с сосиской и сыром", price: 120 },
+            { id: 14, name: "Плюшка с маком", price: 70 },
+            { id: 15, name: "Самса с апельсином", price: 80 },
+            { id: 16, name: "Самса с бараниной", price: 120 },
+            { id: 17, name: "Самса с говядиной", price: 110 },
+            { id: 18, name: "Самса с утиным мясом", price: 110 },
+            { id: 19, name: "Самса с курицей", price: 100 },
+            { id: 20, name: "Самса с лимоном", price: 80 },
+            { id: 21, name: "Самса с яблоком", price: 80 },
+            { id: 22, name: "Сосиска в тесте", price: 80 },
+            { id: 23, name: "Хачапури Груз-кий с курицей", price: 150 },
+            { id: 24, name: "Хачапури по аджарский", price: 120 },
+            { id: 25, name: "Хачапури с курицей", price: 80 },
+            { id: 26, name: "Хачапури с сыром", price: 85 },
+            { id: 27, name: "Хачапури с творогом", price: 70 },
+            { id: 28, name: "Хачапурий Груз-кйи с говядиной", price: 160 },
+            { id: 29, name: "Хачапурий с говядиной (фарш)", price: 90 },
+            { id: 30, name: "Хот-Дог жаренный", price: 120 },
+            { id: 31, name: "Хот-Дог классика", price: 120 },
+            { id: 32, name: "Чебурек с говядиной (фарш)", price: 120 },
+            { id: 33, name: "Чебурек с курицей", price: 110 },
+            { id: 34, name: "Чебурек с сыром и грибами", price: 110 },
+            { id: 35, name: "Колечки сыром", price: 190 },
+            { id: 36, name: "Колечки с курицей", price: 190 },
+            { id: 37, name: "Колечки с говядиной", price: 210 },
+            { id: 38, name: "Колечки с бараниной", price: 220 }
+        ];
+
+        const FLATBREAD_ITEMS = [
+            { id: 1, name: "ЛЕПЁШКИ БОЛЬШИЕ", price: 65 },
+            { id: 2, name: "ЛЕПЁШКИ МАЛ.", price: 50 },
+            { id: 3, name: "ЛЕПЁШ. С ОТРУБЯМИ", price: 65 },
+            { id: 4, name: "ФАТИР", price: 100 },
+            { id: 5, name: "КОЛЕЧКИ С СЫРОМ", price: 190 },
+            { id: 6, name: "КОЛЕЧКИ С КУРИЦЕЙ", price: 190 },
+            { id: 7, name: "КОЛЕЧКИ С ГОВЯДИНОЙ", price: 210 },
+            { id: 8, name: "КОЛЕЧКИ С БАРАНИНОЙ", price: 220 }
+        ];
+
+        const CASHIER_EXTRA = [
+            { id: 'beznal', name: 'Без (безнал)' },
+            { id: 'nal', name: 'Нал' },
+            { id: 'tc_lidiya', name: 'ТЦ.Лидия' },
+            { id: 'zp', name: 'З/П' },
+            { id: 'rashod', name: 'Расход' },
+            { id: 'ostatok', name: 'Остаток' },
+            { id: 'vyruchka', name: 'Выручка' },
+            { id: 'prochie', name: 'Прочие' }
+        ];
+
+        // Объединенный список для кассы
+        const CASHIER_ITEMS = [...BAKING_ITEMS, ...FLATBREAD_ITEMS];
+
+        // Конфигурация ролей
+        const ROLES = {
+            vypechka: { name: "Выпечка", code: "vypechka2026", items: BAKING_ITEMS, type: "employee" },
+            lepeshka: { name: "Лепёшки", code: "lepeshka2026", items: FLATBREAD_ITEMS, type: "employee" },
+            kassa: { name: "Касса", code: "kassa2026", items: CASHIER_ITEMS, type: "employee" },
+            director: { name: "Директор", code: "director2026", type: "director" }
+        };
+
+        // ================= СОСТОЯНИЕ =================
+        let currentRole = null;
+        let db = JSON.parse(localStorage.getItem('taj_tandir_db')) || {};
+
+        // ================= ИНИЦИАЛИЗАЦИЯ =================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Установка текущей даты по умолчанию
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('emp-date').value = today;
+            
+            // Обработчики кнопок входа
+            document.querySelectorAll('.role-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const role = e.currentTarget.dataset.role;
+                    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
+                    e.currentTarget.classList.add('selected');
+                    currentRole = role;
+                    document.getElementById('password-group').classList.add('active');
+                    document.getElementById('login-btn').style.display = 'flex';
+                    document.getElementById('access-code').focus();
+                    document.getElementById('login-error').style.display = 'none';
+                });
+            });
+
+            // Обработчик кнопки входа
+            document.getElementById('login-btn').addEventListener('click', attemptLogin);
+            document.getElementById('access-code').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') attemptLogin();
+            });
+
+            // Обработчик кнопки очистки
+            document.getElementById('emp-clear-btn').addEventListener('click', () => {
+                document.getElementById('modal-confirm').classList.add('active');
+            });
+            document.getElementById('modal-confirm-btn').addEventListener('click', () => {
+                clearReport();
+                closeModal();
+            });
+
+            // Обработчик сохранения
+            document.getElementById('emp-save-btn').addEventListener('click', saveReport);
+
+            // Настройка директора
+            setupDirector();
+        });
+
+        // ================= АВТОРИЗАЦИЯ =================
+        function attemptLogin() {
+            const code = document.getElementById('access-code').value.trim();
+            const roleConfig = ROLES[currentRole];
+
+            if (roleConfig && code === roleConfig.code) {
+                document.getElementById('access-code').value = '';
+                document.getElementById('login-error').style.display = 'none';
+                
+                if (roleConfig.type === 'director') {
+                    showScreen('director-screen');
+                    loadDirectorDashboard();
+                } else {
+                    showScreen('employee-screen');
+                    setupEmployeeDashboard(currentRole);
+                }
+            } else {
+                document.getElementById('login-error').style.display = 'block';
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function logout() {
+            currentRole = null;
+            showScreen('login-screen');
+            document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
+            document.getElementById('password-group').classList.remove('active');
+            document.getElementById('login-btn').style.display = 'none';
+        }
+
+        // ================= КАБИНЕТ СОТРУДНИКА =================
+        function setupEmployeeDashboard(role) {
+            const config = ROLES[role];
+            document.getElementById('emp-report-name').textContent = `Отчёт "${config.name}"`;
+            document.getElementById('emp-nav-title').textContent = config.name;
+            
+            const tbody = document.getElementById('emp-tbody');
+            tbody.innerHTML = '';
+
+            // Отрисовка таблицы
+            config.items.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.id}</td>
+                    <td>${item.name}</td>
+                    <td><input type="number" class="input-qty" data-id="${item.id}" data-price="${item.price}" min="0" step="0.1" value=""></td>
+                    <td class="price-cell">${item.price}</td>
+                    <td class="sum-cell" id="sum-${item.id}">0</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Поля для кассы
+            const cashierExtra = document.getElementById('cashier-extra-fields');
+            if (role === 'kassa') {
+                cashierExtra.style.display = 'grid';
+                cashierExtra.innerHTML = CASHIER_EXTRA.map(field => `
+                    <div class="cashier-field">
+                        <label>${field.name}</label>
+                        <input type="number" class="input-qty cashier-input" data-id="${field.id}" min="0" step="1" value="">
+                    </div>
+                `).join('');
+            } else {
+                cashierExtra.style.display = 'none';
+            }
+
+            // Слушатели изменений
+            document.querySelectorAll('.input-qty').forEach(input => {
+                input.addEventListener('input', calculateEmployeeTotal);
+            });
+
+            // Восстановить данные, если есть
+            const date = document.getElementById('emp-date').value;
+            restoreEmployeeData(role, date);
+        }
+
+        function calculateEmployeeTotal() {
+            let total = 0;
+            document.querySelectorAll('#emp-tbody tr').forEach(tr => {
+                const input = tr.querySelector('.input-qty');
+                const price = parseFloat(input.dataset.price);
+                const qty = parseFloat(input.value) || 0;
+                const sum = qty * price;
+                tr.querySelector('.sum-cell').textContent = sum.toFixed(2);
+                total += sum;
+            });
+
+            // Логика кассы
+            if (currentRole === 'kassa') {
+                const beznal = parseFloat(document.querySelector('.cashier-input[data-id="beznal"]').value) || 0;
+                const nal = parseFloat(document.querySelector('.cashier-input[data-id="nal"]').value) || 0;
+                const tcLidiya = parseFloat(document.querySelector('.cashier-input[data-id="tc_lidiya"]').value) || 0;
+                const rashod = parseFloat(document.querySelector('.cashier-input[data-id="rashod"]').value) || 0;
+                const ostatok = parseFloat(document.querySelector('.cashier-input[data-id="ostatok"]').value) || 0;
+                const vyruchka = parseFloat(document.querySelector('.cashier-input[data-id="vyruchka"]').value) || 0;
+                const prochie = parseFloat(document.querySelector('.cashier-input[data-id="prochie"]').value) || 0;
+                
+                // Касса = Товары + Нал + Безнал*0.98 + ТЦ - Расход + Остаток + Выручка + Прочие
+                const extraTotal = nal + (beznal * 0.98) + tcLidiya - rashod + ostatok + vyruchka + prochie;
+                total += extraTotal;
+            }
+
+            document.getElementById('emp-total').textContent = total.toFixed(2);
+            return total;
+        }
+
+        function saveReport() {
+            const date = document.getElementById('emp-date').value;
+            const time = document.getElementById('emp-time').value;
+            
+            if (!date) {
+                showToast('Пожалуйста, укажите дату', 'error');
+                return;
+            }
+
+            const items = [];
+            document.querySelectorAll('#emp-tbody tr').forEach(tr => {
+                const input = tr.querySelector('.input-qty');
+                const qty = parseFloat(input.value) || 0;
+                if (qty > 0) {
+                    items.push({
+                        id: input.dataset.id,
+                        name: tr.children[1].textContent,
+                        price: parseFloat(input.dataset.price),
+                        qty: qty,
+                        sum: qty * parseFloat(input.dataset.price)
+                    });
+                }
+            });
+
+            let extras = {};
+            if (currentRole === 'kassa') {
+                document.querySelectorAll('.cashier-input').forEach(input => {
+                    extras[input.dataset.id] = parseFloat(input.value) || 0;
+                });
+            }
+
+            const total = calculateEmployeeTotal();
+
+            // Сохранение в БД
+            if (!db[date]) db[date] = {};
+            db[date][currentRole] = {
+                date: date,
+                time: time,
+                items: items,
+                extras: extras,
+                total: total,
+                savedAt: new Date().toISOString()
+            };
+
+            localStorage.setItem('taj_tandir_db', JSON.stringify(db));
+            showToast('Отчёт успешно отправлен директору!', 'success');
+        }
+
+        function clearReport() {
+            document.querySelectorAll('.input-qty').forEach(input => input.value = '');
+            calculateEmployeeTotal();
+            showToast('Данные очищены', 'success');
+        }
+
+        function restoreEmployeeData(role, date) {
+            // Очистка старых значений
+            document.querySelectorAll('.input-qty').forEach(input => input.value = '');
+            if (db[date] && db[date][role]) {
+                const data = db[date][role];
+                document.getElementById('emp-time').value = data.time || '';
+                
+                data.items.forEach(item => {
+                    const input = document.querySelector(`.input-qty[data-id="${item.id}"]`);
+                    if (input) input.value = item.qty;
+                });
+
+                if (role === 'kassa' && data.extras) {
+                    Object.keys(data.extras).forEach(key => {
+                        const input = document.querySelector(`.cashier-input[data-id="${key}"]`);
+                        if (input) input.value = data.extras[key];
+                    });
+                }
+                calculateEmployeeTotal();
+            } else {
+                document.getElementById('emp-time').value = '';
+                calculateEmployeeTotal();
+            }
+        }
+
+        // ================= КАБИНЕТ ДИРЕКТОРА =================
+        function setupDirector() {
+            const dateInput = document.getElementById('dir-date');
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.value = today;
+            
+            dateInput.addEventListener('change', () => {
+                loadDirectorDashboard();
+            });
+
+            // Переключение табов
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    e.currentTarget.classList.add('active');
+                    document.getElementById(`tab-${e.currentTarget.dataset.tab}`).classList.add('active');
+                });
+            });
+
+            // Восстановление данных при смене даты в кабинете сотрудника
+            document.getElementById('emp-date').addEventListener('change', (e) => {
+                if (currentRole && ROLES[currentRole].type === 'employee') {
+                    restoreEmployeeData(currentRole, e.target.value);
+                }
+            });
+        }
+
+        function loadDirectorDashboard() {
+            const date = document.getElementById('dir-date').value;
+            document.getElementById('stat-date').textContent = formatDate(date);
+            
+            let totalRevenue = 0;
+            let reportsCount = 0;
+
+            // Отрисовка каждого отчёта
+            ['vypechka', 'lepeshka', 'kassa'].forEach(role => {
+                const tbody = document.getElementById(`dir-tbody-${role}`);
+                const totalCell = document.getElementById(`dir-total-${role}`);
+                tbody.innerHTML = '';
+                
+                let roleTotal = 0;
+
+                if (db[date] && db[date][role]) {
+                    reportsCount++;
+                    const report = db[date][role];
+                    roleTotal = report.total;
+
+                    report.items.forEach(item => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${item.id}</td>
+                            <td>${item.name}</td>
+                            <td>${item.qty}</td>
+                            <td>${item.price}</td>
+                            <td>${item.sum.toFixed(2)}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+
+                    // Доп. поля для кассы
+                    if (role === 'kassa') {
+                        const extraDiv = document.getElementById('dir-cashier-extra');
+                        extraDiv.style.display = 'block';
+                        extraDiv.innerHTML = `<h4 style="margin-bottom:10px; color:var(--mid-brown);">Дополнительные показатели:</h4>
+                            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap:10px;">
+                            ${CASHIER_EXTRA.map(f => {
+                                const val = report.extras[f.id] || 0;
+                                return `<div style="background:var(--bg-color); padding:10px; border-radius:8px;">
+                                    <div style="font-size:12px; color:var(--mid-brown);">${f.name}</div>
+                                    <div style="font-weight:700;">${val}</div>
+                                </div>`;
+                            }).join('')}
+                            </div>
+                        `;
+                    }
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--beige); padding:20px;">Отчёт не отправлен</td></tr>`;
+                    if (role === 'kassa') document.getElementById('dir-cashier-extra').style.display = 'none';
+                }
+
+                totalCell.textContent = roleTotal.toFixed(2);
+                totalRevenue += roleTotal;
+            });
+
+            // Обновление статистики
+            document.getElementById('stat-revenue').textContent = totalRevenue.toFixed(2) + ' ₽';
+            document.getElementById('stat-reports').textContent = `${reportsCount} / 3`;
+        }
+
+        // ================= ЭКСПОРТ В EXCEL =================
+        function exportExcel() {
+            const date = document.getElementById('dir-date').value;
+            if (!db[date]) {
+                showToast('Нет данных для экспорта', 'error');
+                return;
+            }
+
+            const wb = XLSX.utils.book_new();
+
+            ['vypechka', 'lepeshka', 'kassa'].forEach(role => {
+                if (db[date][role]) {
+                    const report = db[date][role];
+                    const wsData = [
+                        [`Отчёт: ${ROLES[role].name}`],
+                        [`Дата: ${date}`, `Время: ${report.time || ''}`],
+                        ['№', 'Товар', 'Кол-во', 'Цена', 'Сумма']
+                    ];
+
+                    report.items.forEach(item => {
+                        wsData.push([item.id, item.name, item.qty, item.price, item.sum]);
+                    });
+
+                    // Если касса, добавляем доп. поля
+                    if (role === 'kassa') {
+                        wsData.push([]);
+                        wsData.push(['Дополнительные показатели:']);
+                        CASHIER_EXTRA.forEach(f => {
+                            wsData.push([f.name, report.extras[f.id] || 0]);
+                        });
+                    }
+
+                    wsData.push([]);
+                    wsData.push(['ИТОГО:', '', '', '', report.total]);
+
+                    const ws = XLSX.utils.aoa_to_sheet(wsData);
+                    ws['!cols'] = [{wch:5}, {wch:30}, {wch:10}, {wch:10}, {wch:15}];
+                    XLSX.utils.book_append_sheet(wb, ws, ROLES[role].name);
+                }
+            });
+
+            XLSX.writeFile(wb, `Taj_Tandir_${date}.xlsx`);
+            showToast('Excel файл скачан!', 'success');
+        }
+
+        // ================= ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =================
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            let icon = 'ℹ️';
+            if (type === 'success') icon = '✅';
+            if (type === 'error') icon = '❌';
+
+            toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 3500);
+        }
+
+        function closeModal() {
+            document.getElementById('modal-confirm').classList.remove('active');
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '--';
+            const [year, month, day] = dateString.split('-');
+            return `${day}.${month}.${year}`;
+        }
+
+        // Восстановление сессии при перезагрузке (опционально, но полезно)
+        // Примечание: в реальном проекте лучше использовать сессии, здесь просто для удобства
+    </script>
+</body>
+</html>
